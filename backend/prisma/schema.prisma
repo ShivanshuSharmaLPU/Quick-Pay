@@ -8,37 +8,109 @@ datasource db {
 }
 
 model User {
-  id                   Int           @id @default(autoincrement())
+  id                   Int              @id @default(autoincrement())
   firstName            String
   lastName             String
-  email                String        @unique
+  email                String           @unique
   password             String
-  WalletPin            String        
-  UpiId                String        @unique
-  createdAt            DateTime      @default(now())
-  updatedAt            DateTime      @updatedAt
-  balances             Balance[]
-  sentTransactions     Transaction[] @relation("SentTransactions")
-  receivedTransactions Transaction[] @relation("ReceivedTransactions")
-}
+  walletPin            String
+  upiId                String           @unique
+  balance              Decimal          @default(0) @db.Decimal(10, 2)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  
+  sentTransactions     Transaction[]    @relation("SentTransactions")
+  receivedTransactions Transaction[]    @relation("ReceivedTransactions")
+  sentRequests         MoneyRequest[]   @relation("SentRequests")
+  receivedRequests     MoneyRequest[]   @relation("ReceivedRequests")
+  notifications        Notification[]
 
-model Balance {
-  id          Int       @id @default(autoincrement())
-  userId      Int
-  balance     String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  user        User      @relation(fields: [userId], references: [id])
+  @@index([email])
+  @@index([upiId])
 }
 
 model Transaction {
-  id             Int       @id @default(autoincrement())
-  senderId       Int       // User ID of the sender
-  receiverId     Int       // User ID of the receiver
-  amount         Float     // Transaction amount
-  createdAt      DateTime  @default(now())
+  id             Int                @id @default(autoincrement())
+  senderId       Int
+  receiverId     Int
+  amount         Decimal            @db.Decimal(10, 2)
+  type           TransactionType
+  status         TransactionStatus  @default(COMPLETED)
+  description    String?
+  requestId      Int?               @unique
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
 
-  sender         User      @relation("SentTransactions", fields: [senderId], references: [id])
-  receiver       User      @relation("ReceivedTransactions", fields: [receiverId], references: [id])
+  sender         User               @relation("SentTransactions", fields: [senderId], references: [id])
+  receiver       User               @relation("ReceivedTransactions", fields: [receiverId], references: [id])
+  request        MoneyRequest?      @relation(fields: [requestId], references: [id])
+
+  @@index([senderId, createdAt])
+  @@index([receiverId, createdAt])
+  @@index([status])
+}
+
+model MoneyRequest {
+  id              Int           @id @default(autoincrement())
+  requesterId     Int
+  requestedFromId Int
+  amount          Decimal       @db.Decimal(10, 2)
+  message         String?
+  status          RequestStatus @default(PENDING)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  expiresAt       DateTime?
+  
+  requester       User          @relation("SentRequests", fields: [requesterId], references: [id])
+  requestedFrom   User          @relation("ReceivedRequests", fields: [requestedFromId], references: [id])
+  transaction     Transaction?
+
+  @@index([requesterId, status])
+  @@index([requestedFromId, status])
+  @@index([status, createdAt])
+}
+
+model Notification {
+  id        Int              @id @default(autoincrement())
+  userId    Int
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  relatedId Int?
+  createdAt DateTime         @default(now())
+  
+  user      User             @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead])
+  @@index([createdAt])
+}
+
+enum TransactionType {
+  SEND
+  RECEIVE
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum RequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+  EXPIRED
+}
+
+enum NotificationType {
+  TRANSACTION_SENT
+  TRANSACTION_RECEIVED
+  REQUEST_RECEIVED
+  REQUEST_ACCEPTED
+  REQUEST_REJECTED
+  REQUEST_CANCELLED
 }

@@ -1,9 +1,15 @@
 import { configureStore } from "@reduxjs/toolkit";
-import UserReducer from "./Reducers/UserReducer";
+import authReducer from "./slices/authSlice";
+import transactionReducer from "./slices/transactionSlice";
+import requestReducer from "./slices/requestSlice";
+import notificationReducer from "./slices/notificationSlice";
 
 export const store = configureStore({
     reducer: {
-        user: UserReducer,
+        auth: authReducer,
+        transaction: transactionReducer,
+        request: requestReducer,
+        notification: notificationReducer,
     },
 });
 

@@ -1,14 +1,15 @@
 import React from "react";
-import { useAppSelector } from "../../store/hook.tsx";
+import { useAppSelector, useAppDispatch } from "../../store/hook.tsx";
 import { useNavigate } from "react-router-dom";
+import { logout } from "../../store/slices/authSlice";
 
 interface HomeNavbarProps {
   isExpanded: boolean;
 }
 
 const HomeNavbar: React.FC<HomeNavbarProps> = ({ isExpanded }) => {
-  const firstName = useAppSelector((state) => state.user.user?.firstName);
-
+  const { user } = useAppSelector((state) => state.auth);
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
   return (
@@ -19,7 +20,7 @@ const HomeNavbar: React.FC<HomeNavbarProps> = ({ isExpanded }) => {
     >
       <div className="flex items-center gap-8">
         <h1 className="text-xl font-semibold text-white">
-          Welcome, {firstName ? firstName : "Guest"}!
+          Welcome, {user?.firstName ? user.firstName : "Guest"}!
         </h1>
         <p className="text-sm text-gray-200">{new Date().toDateString()}</p>
       </div>
@@ -29,10 +30,7 @@ const HomeNavbar: React.FC<HomeNavbarProps> = ({ isExpanded }) => {
         </button>
         <button
           onClick={() => {
-            // Remove authToken from localStorage on logout
-            localStorage.removeItem("authToken");
-
-            // Redirect to the login page
+            dispatch(logout());
             navigate("/Signin");
           }}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-500"
