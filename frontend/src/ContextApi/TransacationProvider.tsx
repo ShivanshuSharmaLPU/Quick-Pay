@@ -21,10 +21,10 @@ export const TransactionProvider: React.FC<{ children: React.ReactNode }> = ({ c
   );
 };
 
-export const useTransaction = () => {
+export const useTransactionContext = () => {
   const context = useContext(TransactionContext);
   if (!context) {
-    throw new Error("useTransaction must be used within a TransactionProvider");
+    throw new Error("useTransactionContext must be used within a TransactionProvider");
   }
   return context;
 };
